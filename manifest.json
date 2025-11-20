@@ -1,0 +1,9 @@
+{
+  "name": "esphome_ld2410_tracker",
+  "version": "1.0.0",
+  "home_page": "https://github.com/shmekie/esphome_ld2410_tracker",
+  "documentation": "https://github.com/shmekie/esphome_ld2410_tracker/blob/main/README.md",
+  "components": [
+    "./components/ld2410_tracker"
+  ]
+}
