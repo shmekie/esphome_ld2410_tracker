@@ -137,12 +137,13 @@ void LD2410Tracker::loop() {
       break;
 
     // Update ESPHome global variables
-    id(object_present) = detected ? 1 : 0;
-    id(object_angle_deg) = angle;
-    id(object_distance_cm) = dist;
+   if (update_object_present_)  update_object_present_(detected);
+if (update_angle_)           update_angle_(angle);
+if (update_distance_)        update_distance_(dist);
 
-    // Move stepper if tracking is enabled
-    if (detected && id(tracking_enabled)) {
+if (detected && move_stepper_) {
+    move_stepper_(angle);   // YAML decides boundaries and step conversion
+}
       float target_angle = angle;
 
       if (target_angle < id(field_start_deg))
