@@ -12,7 +12,7 @@ bool LD2410Tracker::parse_frame(std::vector<uint8_t> &stream,
   if (stream.size() < 12)
     return false;
 
-  // Ensure header alignment
+  // Header alignment
   if (!(stream[0] == HEADER[0] &&
         stream[1] == HEADER[1] &&
         stream[2] == HEADER[2] &&
@@ -41,14 +41,12 @@ bool LD2410Tracker::parse_frame(std::vector<uint8_t> &stream,
       return false;
   }
 
-  // Length
-  uint16_t len = (uint16_t)stream[4] | ((uint16_t)stream[5] << 8);
+  uint16_t len = (uint16_t) stream[4] | ((uint16_t) stream[5] << 8);
   size_t full_len = 6 + len + 4;
 
   if (stream.size() < full_len)
     return false;
 
-  // Tail check
   if (!(stream[full_len-4] == TAIL[0] &&
         stream[full_len-3] == TAIL[1] &&
         stream[full_len-2] == TAIL[2] &&
@@ -60,7 +58,6 @@ bool LD2410Tracker::parse_frame(std::vector<uint8_t> &stream,
 
   size_t p = 6;
 
-  // Normal data frame
   uint8_t type = stream[p++];
   if (type != 0x02) {
     stream.erase(stream.begin(), stream.begin() + full_len);
@@ -73,12 +70,7 @@ bool LD2410Tracker::parse_frame(std::vector<uint8_t> &stream,
     return false;
   }
 
-  if (p + 10 > full_len) {
-    stream.erase(stream.begin(), stream.begin() + full_len);
-    return false;
-  }
-
-  uint8_t target_state = stream[p++];  // 0=none, 1=motion, 2=static, 3=both
+  uint8_t target_state = stream[p++];
 
   uint16_t motion_dist = (uint16_t)stream[p] | ((uint16_t)stream[p+1] << 8);
   p += 2;
@@ -91,39 +83,33 @@ bool LD2410Tracker::parse_frame(std::vector<uint8_t> &stream,
   uint16_t detect_dist = (uint16_t)stream[p] | ((uint16_t)stream[p+1] << 8);
   p += 2;
 
-  // End bytes (0x55, 0x00)
-  p += 2;
+  p += 2; // 0x55, 0x00 end
 
   stream.erase(stream.begin(), stream.begin() + full_len);
 
-  // Fill data
   detected = (target_state != 0x00);
   dist_cm = (float) detect_dist;
 
-  // Heuristic angle mapping
-  float energy_diff = (float)motion_energy - (float)static_energy;
+  float energy_diff = (float) motion_energy - (float) static_energy;
   float angle = 45.0f + (energy_diff * 0.6f);
 
   if (angle < 0.0f) angle = 0.0f;
   if (angle > 90.0f) angle = 90.0f;
-  angle_deg = angle;
 
+  angle_deg = angle;
   return true;
 }
 
 void LD2410Tracker::loop() {
-  if (uart_ == nullptr)
-    return;
+  if (!uart_) return;
 
   size_t avail = uart_->available();
-  if (avail == 0)
-    return;
+  if (avail == 0) return;
 
   uint8_t buf[512];
   if (avail > sizeof(buf)) avail = sizeof(buf);
   int read = uart_->read_array(buf, avail);
-  if (read <= 0)
-    return;
+  if (read <= 0) return;
 
   static std::vector<uint8_t> stream;
   stream.insert(stream.end(), buf, buf + read);
@@ -136,25 +122,11 @@ void LD2410Tracker::loop() {
     if (!parse_frame(stream, detected, angle, dist))
       break;
 
-    // Update ESPHome global variables
-   if (update_object_present_)  update_object_present_(detected);
-if (update_angle_)           update_angle_(angle);
-if (update_distance_)        update_distance_(dist);
+    if (update_object_present_) update_object_present_(detected);
+    if (update_angle_)          update_angle_(angle);
+    if (update_distance_)       update_distance_(dist);
 
-if (detected && move_stepper_) {
-    move_stepper_(angle);   // YAML decides boundaries and step conversion
-}
-      float target_angle = angle;
-
-      if (target_angle < id(field_start_deg))
-        target_angle = id(field_start_deg);
-      if (target_angle > id(field_end_deg))
-        target_angle = id(field_end_deg);
-
-      int steps = (int) roundf(target_angle * id(steps_per_degree));
-
-      id(tracker_stepper).set_target(steps);
-      id(current_angle_deg) = target_angle;
-    }
+    if (detected && move_stepper_)
+      move_stepper_(angle);
   }
 }
