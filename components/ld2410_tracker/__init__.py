@@ -20,10 +20,10 @@ CONFIG_SCHEMA = cv.Schema(
 
         cv.Required(CONF_UART_ID): cv.use_id(uart.UARTComponent),
 
-        cv.Optional(CONF_UPDATE_OBJECT_PRESENT): cv.returning_lambda,
-        cv.Optional(CONF_UPDATE_ANGLE): cv.returning_lambda,
-        cv.Optional(CONF_UPDATE_DISTANCE): cv.returning_lambda,
-        cv.Optional(CONF_MOVE_STEPPER): cv.returning_lambda,
+        cv.Optional(CONF_UPDATE_OBJECT_PRESENT): cv.lambda_,
+        cv.Optional(CONF_UPDATE_ANGLE): cv.lambda_,
+        cv.Optional(CONF_UPDATE_DISTANCE): cv.lambda_,
+        cv.Optional(CONF_MOVE_STEPPER): cv.lambda_,
     }
 ).extend(cv.COMPONENT_SCHEMA)
 
@@ -34,35 +34,22 @@ async def to_code(config):
     uart_component = await cg.get_variable(config[CONF_UART_ID])
     cg.add(var.set_uart(uart_component))
 
-    # Bind callbacks
+    # ---- Bind callbacks ----
+
     if CONF_UPDATE_OBJECT_PRESENT in config:
-        lambda_fn = await cg.process_lambda(
-            config[CONF_UPDATE_OBJECT_PRESENT],
-            args=[cg.bool_]
-        )
-        cg.add(var.set_update_object_present(lambda_fn))
+        lambda_ = await cg.process_lambda(config[CONF_UPDATE_OBJECT_PRESENT], [])
+        cg.add(var.set_update_object_present(lambda_))
 
     if CONF_UPDATE_ANGLE in config:
-        lambda_fn = await cg.process_lambda(
-            config[CONF_UPDATE_ANGLE],
-            args=[cg.float_]
-        )
-        cg.add(var.set_update_angle(lambda_fn))
+        lambda_ = await cg.process_lambda(config[CONF_UPDATE_ANGLE], [])
+        cg.add(var.set_update_angle(lambda_))
 
     if CONF_UPDATE_DISTANCE in config:
-        lambda_fn = await cg.process_lambda(
-            config[CONF_UPDATE_DISTANCE],
-            args=[cg.float_]
-        )
-        cg.add(var.set_update_distance(lambda_fn))
+        lambda_ = await cg.process_lambda(config[CONF_UPDATE_DISTANCE], [])
+        cg.add(var.set_update_distance(lambda_))
 
     if CONF_MOVE_STEPPER in config:
-        lambda_fn = await cg.process_lambda(
-            config[CONF_MOVE_STEPPER],
-            args=[cg.float_]
-        )
-        cg.add(var.set_move_stepper(lambda_fn))
+        lambda_ = await cg.process_lambda(config[CONF_MOVE_STEPPER], [])
+        cg.add(var.set_move_stepper(lambda_))
 
     await cg.register_component(var, config)
-
-
