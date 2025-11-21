@@ -5,7 +5,7 @@ from esphome.const import CONF_ID
 
 CONF_UART_ID = "uart_id"
 
-# Callback names
+# Callback options
 CONF_UPDATE_OBJECT_PRESENT = "update_object_present"
 CONF_UPDATE_ANGLE = "update_angle"
 CONF_UPDATE_DISTANCE = "update_distance"
@@ -34,22 +34,34 @@ async def to_code(config):
     uart_component = await cg.get_variable(config[CONF_UART_ID])
     cg.add(var.set_uart(uart_component))
 
-    # ---- Bind callbacks ----
-
+    # Bind callbacks with correct type signatures
     if CONF_UPDATE_OBJECT_PRESENT in config:
-        lambda_ = await cg.process_lambda(config[CONF_UPDATE_OBJECT_PRESENT], [])
+        lambda_ = await cg.process_lambda(
+            config[CONF_UPDATE_OBJECT_PRESENT],
+            args=[cg.bool_]
+        )
         cg.add(var.set_update_object_present(lambda_))
 
     if CONF_UPDATE_ANGLE in config:
-        lambda_ = await cg.process_lambda(config[CONF_UPDATE_ANGLE], [])
+        lambda_ = await cg.process_lambda(
+            config[CONF_UPDATE_ANGLE],
+            args=[cg.float_]
+        )
         cg.add(var.set_update_angle(lambda_))
 
     if CONF_UPDATE_DISTANCE in config:
-        lambda_ = await cg.process_lambda(config[CONF_UPDATE_DISTANCE], [])
+        lambda_ = await cg.process_lambda(
+            config[CONF_UPDATE_DISTANCE],
+            args=[cg.float_]
+        )
         cg.add(var.set_update_distance(lambda_))
 
     if CONF_MOVE_STEPPER in config:
-        lambda_ = await cg.process_lambda(config[CONF_MOVE_STEPPER], [])
+        lambda_ = await cg.process_lambda(
+            config[CONF_MOVE_STEPPER],
+            args=[cg.float_]
+        )
         cg.add(var.set_move_stepper(lambda_))
 
     await cg.register_component(var, config)
+
